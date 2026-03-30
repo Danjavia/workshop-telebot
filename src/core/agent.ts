@@ -1,6 +1,7 @@
 import { callLLM } from '../services/llm.js';
 import { MemoryManager } from './memory.js';
 import { getTool, generateToolsDescription } from '../tools/index.js';
+import { skillManager } from '../skills/SkillManager.js';
 
 const MAX_ITERATIONS = 5;
 
@@ -16,7 +17,6 @@ interface Message {
 
 function parseToolCall(content: string): ToolCall | null {
   try {
-    // Try to find JSON in the response
     const jsonMatch = content.match(/\{[\s\S]*"tool"[\s\S]*\}/);
     if (!jsonMatch) {
       return null;
@@ -63,34 +63,32 @@ export async function runAgent(
 ): Promise<string> {
   const memory = new MemoryManager(userId);
   
-  // Save user message to memory
   await memory.saveUserMessage(userMessage);
   
-  // Build messages array
   const messages: Message[] = [];
   
-  // Add system prompt with tools description
   const toolsDescription = generateToolsDescription();
+  const skillInstructions = skillManager.getInstructions();
+
   messages.push({
     role: 'system',
     content: `Eres OpenGravity, un asistente de IA útil que ejecuta localmente. Tienes acceso a herramientas que puedes usar para ayudar al usuario.
 
 ${toolsDescription}
 
+${skillInstructions ? `\n\nTambién tienes las siguientes habilidades especializadas:\n${skillInstructions}` : ''}
+
 Cuando necesites usar una herramienta, responde SOLO con el formato JSON mostrado arriba. Cuando no necesites herramientas, responde directamente de manera conversacional y útil en español.`,
   });
   
-  // Add recent context from memory
   const recentMessages = await memory.getRecentContext(10);
   messages.push(...recentMessages);
   
-  // Add current user message
   messages.push({
     role: 'user',
     content: userMessage,
   });
   
-  // Agent loop
   let iteration = 0;
   let finalResponse = '';
   
@@ -100,18 +98,13 @@ Cuando necesites usar una herramienta, responde SOLO con el formato JSON mostrad
     
     try {
       const llmResponse = await callLLM(messages);
-      
-      // Check if it's a tool call
       const toolCall = parseToolCall(llmResponse);
       
       if (toolCall) {
         console.log(`Tool call detected: ${toolCall.tool}`);
-        
-        // Execute the tool
         const toolResult = await executeTool(toolCall);
         console.log(`Tool result: ${toolResult}`);
         
-        // Add the tool interaction to messages
         messages.push({
           role: 'assistant',
           content: llmResponse,
@@ -121,11 +114,9 @@ Cuando necesites usar una herramienta, responde SOLO con el formato JSON mostrad
           content: `Tool result: ${toolResult}`,
         });
         
-        // Continue to next iteration
         continue;
       }
       
-      // No tool call - this is the final response
       finalResponse = llmResponse;
       break;
       
@@ -136,7 +127,6 @@ Cuando necesites usar una herramienta, responde SOLO con el formato JSON mostrad
       if (iteration === MAX_ITERATIONS) {
         finalResponse = `I encountered an error and reached the maximum number of iterations. Error: ${errorMessage}`;
       } else {
-        // Add error to context and try again
         messages.push({
           role: 'user',
           content: `There was an error: ${errorMessage}. Please try again.`,
@@ -149,7 +139,6 @@ Cuando necesites usar una herramienta, responde SOLO con el formato JSON mostrad
     finalResponse = 'I reached the maximum number of iterations without completing the task. Please try rephrasing your request.';
   }
   
-  // Save assistant response to memory
   await memory.saveAssistantMessage(finalResponse);
   
   return finalResponse;

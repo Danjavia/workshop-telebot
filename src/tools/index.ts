@@ -1,7 +1,15 @@
 import type { Tool } from '../types/tool.js';
 import { getCurrentTimeTool } from './getCurrentTime.js';
+import { learnSkillTool } from './learnSkill.js';
+import { skillManager } from '../skills/SkillManager.js';
 
 export const tools: Map<string, Tool> = new Map();
+
+// Initialize skillManager callback
+skillManager.setToolRegistrationCallback((tool: Tool) => {
+  console.log(`Dynamically registering tool: ${tool.name}`);
+  registerTool(tool);
+});
 
 export function registerTool(tool: Tool): void {
   tools.set(tool.name, tool);
@@ -46,3 +54,4 @@ Para usar esta herramienta, responde SOLO con este JSON:
 
 // Register all tools
 registerTool(getCurrentTimeTool);
+registerTool(learnSkillTool);
