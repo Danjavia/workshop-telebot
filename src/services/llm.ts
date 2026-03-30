@@ -15,8 +15,8 @@ export async function callLLM(messages: Message[]): Promise<string> {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     
-    if (errorMessage.includes('RATE_LIMIT')) {
-      console.log('Groq rate limited, falling back to OpenRouter...');
+    if (errorMessage.includes('RATE_LIMIT') || errorMessage.includes('rate_limit_exceeded')) {
+      console.log('Groq limit exceeded, falling back to OpenRouter...');
       try {
         const response = await callOpenRouter(messages);
         console.log('OpenRouter fallback succeeded');
@@ -24,7 +24,7 @@ export async function callLLM(messages: Message[]): Promise<string> {
       } catch (fallbackError) {
         const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
         console.error('OpenRouter fallback failed:', fallbackMessage);
-        throw new Error(`Both LLM providers failed. Groq: RATE_LIMIT, OpenRouter: ${fallbackMessage}`);
+        throw new Error(`Both LLM providers failed. Groq: LIMIT_EXCEEDED, OpenRouter: ${fallbackMessage}`);
       }
     }
     

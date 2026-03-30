@@ -10,7 +10,7 @@ const envSchema = z.object({
   }),
   GROQ_API_KEY: z.string().min(1, 'GROQ_API_KEY is required'),
   OPENROUTER_API_KEY: z.string().min(1, 'OPENROUTER_API_KEY is required'),
-  OPENROUTER_MODEL: z.string().default('meta-llama/llama-3.1-8b-instruct:free'),
+  OPENROUTER_MODEL: z.string().default('google/gemini-2.0-flash-exp:free'),
   DATABASE_PATH: z.string().default('./data/messages.db'),
   DEEPGRAM_API_KEY: z.string().min(1, 'DEEPGRAM_API_KEY is required'),
 });

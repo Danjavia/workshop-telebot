@@ -1,5 +1,6 @@
 import { initDatabase, closeDatabase } from './services/db.js';
 import { setupBot, bot } from './bot.js';
+import { skillManager } from './skills/SkillManager.js';
 
 async function main(): Promise<void> {
   console.log('🚀 Starting OpenGravity Agent...');
@@ -7,6 +8,9 @@ async function main(): Promise<void> {
   try {
     // Initialize database
     initDatabase();
+
+    // Load skills
+    await skillManager.loadAllSkills();
 
     // Setup bot handlers
     setupBot();

@@ -70,6 +70,30 @@ export class SkillManager {
     }
   }
 
+  async loadAllSkills(): Promise<void> {
+    try {
+      // Ensure the skills directory exists
+      await fs.mkdir(this.skillsPath, { recursive: true });
+      
+      const entries = await fs.readdir(this.skillsPath, { withFileTypes: true });
+      const skillDirs = entries
+        .filter(entry => entry.isDirectory())
+        .map(entry => entry.name);
+
+      console.log(`🔍 Found ${skillDirs.length} skills to auto-load: ${skillDirs.join(', ')}`);
+
+      for (const skillName of skillDirs) {
+        try {
+          await this.learnSkill(skillName);
+        } catch (error) {
+          console.error(`❌ Failed to auto-load skill "${skillName}":`, error instanceof Error ? error.message : String(error));
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error scanning skills directory:', error);
+    }
+  }
+
   getLearnedSkills(): Skill[] {
     return Array.from(this.learnedSkills.values());
   }

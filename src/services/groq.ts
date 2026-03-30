@@ -19,7 +19,7 @@ interface Message {
 }
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
+const GROQ_MODEL = 'llama-3.1-8b-instant';
 
 export async function callGroq(messages: Message[]): Promise<string> {
   const response = await fetch(GROQ_API_URL, {
